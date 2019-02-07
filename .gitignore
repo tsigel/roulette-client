@@ -1,0 +1,7 @@
+.idea
+/**/*.js
+/**/*.jsx
+/**/*.jsx.map
+/**/*.js.map
+dist
+node_modules
