@@ -6,7 +6,6 @@ import { join } from 'path';
 const devServer: DevServerConfiguration = {
     contentBase: join(__dirname, 'dist'),
     compress: false,
-    hot: true,
     port: 9000,
     index: 'index.html'
 };
