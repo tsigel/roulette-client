@@ -1,6 +1,7 @@
 import { Configuration } from 'webpack';
 import { Configuration as DevServerConfiguration } from 'webpack-dev-server';
 import { join } from 'path';
+import * as CopyWebpackPlugin from 'copy-webpack-plugin';
 
 
 const devServer: DevServerConfiguration = {
@@ -28,7 +29,16 @@ const config: Configuration = {
         rules: [
             { test: /\.tsx?$/, loader: 'ts-loader' }
         ]
-    }
+    },
+    plugins: [
+        new CopyWebpackPlugin([
+            {
+                from: 'src/*.html',
+                to: '',
+                flatten: true
+            }
+        ])
+    ]
 };
 
 export = config;

@@ -1,5 +1,5 @@
 import { api } from '@waves/ts-types';
-import { canSetBet, getAttachment, getNextGame, WavesKeeper } from '../utils';
+import { canSetBet, getAttachment, getNextGame, getState, toBase58, WavesKeeper } from '../utils';
 import { ROULETTE_ADDRESS, ROULETTE_ORACLE_ADDRESS, ROULETTE_PUBLIC_KEY } from '../constants';
 import { head } from 'ramda';
 import { libs } from '@waves/signature-generator';
@@ -12,15 +12,52 @@ export function setBet(betType: number, bet: number): Promise<any> {
         return Promise.reject('Can\'t set bet!');
     }
 
+    const nextGame: number = getNextGame() as number;
+    const key = toBase58(nextGame);
+
     return WavesKeeper.signAndPublishTransaction({
         type: 4,
         data: {
             recipient: ROULETTE_ADDRESS,
             amount: { tokens: 1, assetId: 'WAVES' },
             fee: { tokens: 0.001, assetId: 'WAVES' },
-            attachment: getAttachment(getNextGame() as number, [betType, bet])
+            attachment: getAttachment(nextGame as number, [betType, bet])
         }
-    });
+    })
+        .then(json => JSON.parse(json))
+        .then(waitTransaction)
+        .then(tx => getState().then(state =>
+            fetch(`${state.network.server}addresses/data/${ROULETTE_ORACLE_ADDRESS}/${key}`))
+            .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+            .catch(() => ({ value: 0 }))
+            .then(data => [tx, data.value]))
+        .then(([tx, betSum]) => {
+            debugger;
+            return WavesKeeper.signTransaction({
+                type: 12,
+                data: {
+                    data: [
+                        {
+                            key: tx.id,
+                            type: 'binary',
+                            value: 'base64:' + libs.base64.fromByteArray(Uint8Array.from([betType, bet]))
+                        },
+                        { key: `${tx.id}_round`, type: 'string', value: key },
+                        { key: `${key}_betsSum`, type: 'integer', value: tx.amount + betSum - 0.005 * Math.pow(10, 8) }
+                    ],
+                    fee: {
+                        tokens: 0.005,
+                        assetId: 'WAVES'
+                    },
+                    senderPublicKey: ROULETTE_PUBLIC_KEY
+                }
+            });
+        })
+        .then(broadcast)
+        .catch((e) => {
+            debugger;
+            console.error(e);
+        });
 }
 
 export function getResult(betResult: IBetResult): Promise<void> {
@@ -88,7 +125,7 @@ export function getUserAddress(): Promise<string> {
 }
 
 export function getCurrentFees(id: string): Promise<number> {
-    return WavesKeeper.publicState()
+    return getState()
         .then(state => fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${id}_fees`))
         .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
         .then(data => data.value)
@@ -104,7 +141,7 @@ export function getUserBets(): Promise<Array<ITransferWithBet>> {
 }
 
 export function getUserTransactions(count: number = 500) {
-    return (address: string): Promise<Array<api.TTransaction<string | number>>> => WavesKeeper.publicState()
+    return (address: string): Promise<Array<api.TTransaction<string | number>>> => getState()
         .then(state => fetch(`${state.network.server}transactions/address/${address}/limit/${count}`))
         .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
         .then(head as any) as Promise<Array<api.TTransaction<string | number>>>;
@@ -134,7 +171,7 @@ export function getUserBetByTransfer(tx: api.TTransferTransaction<string | numbe
 
 export function getBetResult(filterList: Array<string>) {
     return (list: Array<ITransferWithBet>): Promise<Array<IBetResult>> =>
-        WavesKeeper.publicState()
+        getState()
             .then(state => Promise.all(
                 list
                     .filter(item => !filterList.includes(item.tx.id))
@@ -188,7 +225,7 @@ export function getBackAmount(betType: number, amount: number): number {
 }
 
 export function broadcast(body: string): Promise<api.TTransaction<string | number>> {
-    return WavesKeeper.publicState()
+    return getState()
         .then(state => fetch(`${state.network.server}transactions/broadcast`, {
             body,
             method: 'POST',
@@ -200,7 +237,7 @@ export function broadcast(body: string): Promise<api.TTransaction<string | numbe
 }
 
 export function waitTransaction(tx: api.TTransaction<string | number>): Promise<api.TTransaction<string | number>> {
-    return WavesKeeper.publicState()
+    return getState()
         .then(state => fetch(`${state.network.server}transactions/info/${tx.id}`))
         .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
         .catch(() => wait(1000)

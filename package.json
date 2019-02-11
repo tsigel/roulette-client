@@ -30,6 +30,7 @@
     "waves-transactions": "^3.0.13"
   },
   "devDependencies": {
+    "@types/copy-webpack-plugin": "^4.4.2",
     "@types/webpack": "^4.4.24",
     "@types/webpack-dev-server": "^3.1.1",
     "copy-webpack-plugin": "^4.6.0",

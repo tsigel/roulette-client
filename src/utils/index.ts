@@ -31,6 +31,11 @@ export function getAttachment(time: number, bet: [number, number]): string {
     return libs.converters.byteArrayToString(bytes);
 }
 
+export function toBase58(data: string | number): string {
+    const bytes = Uint8Array.from(libs.converters.stringToByteArray(String(data)));
+    return libs.base58.encode(bytes);
+}
+
 export function getLastGame(list: Array<number> = generateGameList()): number | null {
     return last(list.filter(lt(__, Date.now()))) || null;
 }
@@ -54,6 +59,25 @@ export function canSetBet() {
     return !brokenLeft && !brokenRight;
 }
 
+export function getKeeperApi(): Promise<WavesKeeper.API> {
+    return new Promise(resolve => {
+        const loop = () => {
+            if ('WavesKeeper' in window) {
+                resolve((window as any).WavesKeeper);
+            } else {
+                setTimeout(loop, 20);
+            }
+        };
+        loop();
+    });
+}
+
+export const getState = (() => {
+    const promise = getKeeperApi()
+        .then(api => api.publicState());
+    return () => promise;
+})();
+
 export const WavesKeeper: {
     signAndPublishTransaction(data: { type: number; data: any }): Promise<any>
     signTransaction(data: { type: number; data: any }): Promise<string>
@@ -62,6 +86,17 @@ export const WavesKeeper: {
 } = (window as any).WavesKeeper;
 
 export namespace WavesKeeper {
+
+    export interface API {
+        signAndPublishTransaction(data: { type: number; data: any }): Promise<string>
+
+        signTransaction(data: { type: number; data: any }): Promise<string>
+
+        publicState(): Promise<WavesKeeper.IState>;
+
+        on(event: 'update', cb: (data: WavesKeeper.IState) => any): void;
+    }
+
     export interface IState {
         network: { server: string },
         account: { address: string } | null,
