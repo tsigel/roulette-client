@@ -7,7 +7,7 @@ import { BigNumber } from '@waves/data-entities';
 import { transfer } from 'waves-transactions';
 
 
-export function setBet(betType: number, bet: number): Promise<void> {
+export function setBet(betType: number, bet: number): Promise<any> {
     if (!canSetBet()) {
         return Promise.reject('Can\'t set bet!');
     }

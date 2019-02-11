@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { splitEvery } from 'ramda';
-import { canSetBet } from '../utils';
+import { canSetBet, getNextGame, WavesKeeper } from '../utils';
 import { CELLS } from '../cell';
 import { History } from '../history';
-import { setBet } from '../bets/setBet';
+import { setBet, waitTransaction } from '../bets/setBet';
 
 
 export class App extends React.Component<App.IProps, App.IState> {
@@ -28,7 +28,10 @@ export class App extends React.Component<App.IProps, App.IState> {
         setTimeout(loop, 1000);
     }
 
-    private onClick = (bet: number) => setBet(0, bet);
+    private onClick = (bet: number) => {
+        const nextGame = getNextGame();
+
+    };
 
     public render() {
         const cells = Object.entries(CELLS).sort(([a], [b]) => Number(a) - Number(b));

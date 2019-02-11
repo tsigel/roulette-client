@@ -55,7 +55,7 @@ export function canSetBet() {
 }
 
 export const WavesKeeper: {
-    signAndPublishTransaction(data: { type: number; data: any }): Promise<void>
+    signAndPublishTransaction(data: { type: number; data: any }): Promise<any>
     signTransaction(data: { type: number; data: any }): Promise<string>
     publicState(): Promise<WavesKeeper.IState>;
     on(event: 'update', cb: (data: WavesKeeper.IState) => any): void;
