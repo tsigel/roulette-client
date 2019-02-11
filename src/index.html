@@ -15,6 +15,8 @@
             text-align: center;
             background-color: black;
             color: white;
+            display: flex;
+            justify-content: center;
         }
 
         .bet.red {
@@ -24,6 +26,41 @@
         .flex-container {
             display: flex;
         }
+
+        .bet-line {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bet-line .item {
+            display: flex;
+            padding: 12px 15px;
+        }
+
+        .bet-line button {
+            margin: 5px 0;
+        }
+
+        .bet-line .item:first-child {
+            padding-left: 0;
+        }
+
+        .content {
+            width: 600px;
+            margin: auto;
+        }
+
+        .line {
+            width: 600px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #EEE;
+        }
+
+        .history {
+            margin-top: 30px;
+        }
+
     </style>
 </head>
 <body>

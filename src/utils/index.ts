@@ -1,5 +1,5 @@
-import { head, gt, __ } from 'ramda';
-import { GAME_INTERVAL } from '../constants';
+import { head, gt, __, last, lt } from 'ramda';
+import { GAME_INTERVAL, LIMIT } from '../constants';
 import { libs } from '@waves/signature-generator';
 
 
@@ -15,7 +15,7 @@ export function isTheSameDay(time?: number, compareDate?: number): boolean {
 
 export function generateGameList(): Array<number> {
     const now = getStartOfDay();
-    let time = now;
+    let time = now + GAME_INTERVAL;
     const dateList = [];
 
     do {
@@ -28,21 +28,35 @@ export function generateGameList(): Array<number> {
 
 export function getAttachment(time: number, bet: [number, number]): string {
     const bytes = Uint8Array.from([...libs.converters.stringToByteArray(String(time)), ...bet]);
-    console.log(bytes);
     return libs.converters.byteArrayToString(bytes);
 }
 
-export function getNextGame(list: Array<number> = generateGameList()): number {
-    return head(list.filter(gt(__, Date.now()))) as number;
+export function getLastGame(list: Array<number> = generateGameList()): number | null {
+    return last(list.filter(lt(__, Date.now()))) || null;
 }
 
-export function getNextGameOffset(nextGame: number = getNextGame()): number {
-    return nextGame - Date.now();
+export function getNextGame(list: Array<number> = generateGameList()): number | null {
+    return head(list.filter(gt(__, Date.now()))) || null;
+}
+
+export function getNextGameOffset(nextGame: number | null = getNextGame()): number | null {
+    return nextGame ? nextGame - Date.now() : null;
+}
+
+export function canSetBet() {
+    const time = Date.now();
+    const lastGame = getLastGame();
+    const nextGame = getNextGame();
+
+    const brokenLeft = lastGame && time - lastGame < LIMIT;
+    const brokenRight = !nextGame || nextGame - time < LIMIT;
+
+    return !brokenLeft && !brokenRight;
 }
 
 export const WavesKeeper: {
     signAndPublishTransaction(data: { type: number; data: any }): Promise<void>
-    signTransaction(data: { type: number; data: any }): Promise<void>
+    signTransaction(data: { type: number; data: any }): Promise<string>
     publicState(): Promise<WavesKeeper.IState>;
     on(event: 'update', cb: (data: WavesKeeper.IState) => any): void;
 } = (window as any).WavesKeeper;
