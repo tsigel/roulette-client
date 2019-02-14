@@ -1,5 +1,5 @@
 import { broadcast, canSetBet, getNextGame, getState, toBase58, waitTransaction, WavesKeeper } from '../utils';
-import { ROULETTE_ADDRESS, ROULETTE_ORACLE_ADDRESS, ROULETTE_PUBLIC_KEY } from '../constants';
+import { ROULETTE_ADDRESS, ROULETTE_PUBLIC_KEY } from '../constants';
 import { libs } from '@waves/signature-generator';
 
 
@@ -22,7 +22,7 @@ export function registerBet(betType: number, bet: number): Promise<any> {
         .then(json => JSON.parse(json))
         .then(waitTransaction)
         .then(tx => getState().then(state =>
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ORACLE_ADDRESS}/${key}`))
+            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${key}_betsSum`))
             .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
             .catch(() => ({ value: 0 }))
             .then(data => [tx, data.value]))

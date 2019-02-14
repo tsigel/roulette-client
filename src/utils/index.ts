@@ -27,19 +27,19 @@ export function getUserTransactions(count: number = 500) {
 }
 
 export function isTransfer(tx: api.TTransaction<string | number>): tx is api.TTransferTransaction<number> {
-    return tx.type === 4;
+    return tx.type === 4 && tx.recipient === ROULETTE_ADDRESS;
 }
 
 export function getUserBetByTransfer(tx: api.TTransferTransaction<number>): Promise<ITransferWithBet | api.TTransferTransaction<number>> {
 
     return getState().then(state =>
         Promise.all([
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ORACLE_ADDRESS}/${tx.id}`)
+            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${tx.id}`)
                 .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e))),
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ORACLE_ADDRESS}/${tx.id}_round`)
+            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${tx.id}_round`)
                 .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
         ]).then(([bets, round]) => {
-            const bytes = libs.base58.decode(bets.value.replace('base64:', ''));
+            const bytes = libs.base64.toByteArray(bets.value.replace('base64:', ''));
             const gameId = Number(fromBase58(round.value));
             const [betType, bet] = bytes;
             const key = round.value;
@@ -201,7 +201,7 @@ export function canSetBet() {
     const nextGame = getNextGame();
 
     const brokenLeft = lastGame && time - lastGame < LIMIT;
-    const brokenRight = !nextGame || nextGame - time < LIMIT;
+    const brokenRight = !nextGame || nextGame - time < LIMIT * 2;
 
     return !brokenLeft && !brokenRight;
 }

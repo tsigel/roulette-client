@@ -10,6 +10,7 @@ import {
 } from '../utils';
 import { api } from '@waves/ts-types';
 import { pathEq, pipe, map, uniqBy, path } from 'ramda';
+import { withdraw } from '../bets';
 
 
 export class History extends React.Component<History.IProps, History.IState> {
@@ -94,8 +95,11 @@ export class History extends React.Component<History.IProps, History.IState> {
                 })}
                 {this.state.other.map(item => {
                     const date = new Date(item.gameId);
+                    const getBack = () => withdraw(item);
                     const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
-                    const button = item.success ? '<span>Уже забрал</span>' : '<span>---</span>';
+                    const button = item.success ? item.assigned ? <span>Уже забрал</span> :
+                        <button type="button" onClick={() => getBack()} className="btn btn-primary">Забрать</button> :
+                        <span>Проиграл</span>;
 
                     return (
                         <div className='bet-line' key={item.tx.id}>
@@ -111,6 +115,7 @@ export class History extends React.Component<History.IProps, History.IState> {
     }
 }
 
+// @ts-ignore
 function getBetText(betType: number, bet: number): string | unknown {
     switch (betType) {
         case 0:

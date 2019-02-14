@@ -25,5 +25,5 @@
   "files": [
     "webpack.config.ts"
   ],
-  "exclude": ["build", "node_modules"]
+  "exclude": ["dist", "node_modules"]
 }
