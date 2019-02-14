@@ -1,25 +1,53 @@
 import * as React from 'react';
-import { getBetResult, getResult, getUserAddress, getUserBets, IBetResult } from '../bets/setBet';
+import {
+    getBetResult,
+    getUserAddress,
+    getUserBetByTransfer,
+    getUserPayments,
+    IBetResult,
+    isPayment,
+    ITransferWithBet
+} from '../utils';
+import { api } from '@waves/ts-types';
+import { pathEq, pipe, map, uniqBy, path } from 'ramda';
 
 
 export class History extends React.Component<History.IProps, History.IState> {
 
-    public state: History.IState = { list: [] };
+    public state: History.IState = {
+        balance: [],
+        unconfirmed: [],
+        other: []
+    };
 
     constructor(props: History.IProps) {
         super(props);
 
         const loop = () => {
-
-            // const filter = this.state.list
-            //     .filter(item => !item.success || item.assigned)
-            //     .map(item => item.tx.id);
-
-            getUserBets()
-                .then(getBetResult(/*filter*/[]))
+            getUserPayments()
+                .then(this.filterResolvedPayments)
                 .then(list => {
-                    this.setState({ list });
-                    setTimeout(loop, 1000);
+                    return this.getUnregistred(list)
+                        .then((items: Array<api.TTransferTransaction<number> | ITransferWithBet>) => {
+                            const balance: Array<api.TTransferTransaction<number>> = items.filter(isPayment);
+                            const withBet = items.filter(item => !isPayment(item)) as Array<ITransferWithBet>;
+                            return getBetResult(withBet)
+                                .then(list => {
+
+                                    const unconfirmed = uniqBy(path(['tx', 'id']), [
+                                        ...list.filter(item => item.pending === true),
+                                        ...this.state.unconfirmed
+                                    ]);
+
+                                    const other = uniqBy(path(['tx', 'id']), [
+                                        ...list.filter((item: ITransferWithBet) => item.pending === false),
+                                        ...this.state.other
+                                    ]);
+
+                                    this.setState({ other, unconfirmed, balance });
+                                    setTimeout(loop, 1000);
+                                });
+                        });
                 });
         };
 
@@ -27,27 +55,57 @@ export class History extends React.Component<History.IProps, History.IState> {
             .then(loop);
     }
 
+    private filterResolvedPayments = (list: Array<api.TTransferTransaction<number>>) =>
+        list.filter(tx => !this.state.other.find(pathEq(['tx', 'id'], tx.id)));
+
+    private filterRegistredPayments = (list: Array<api.TTransferTransaction<number>>) =>
+        list.filter(tx => !this.state.other.find(pathEq(['tx', 'id'], tx.id)));
+
+    private getUnregistred = pipe(
+        this.filterRegistredPayments,
+        map(getUserBetByTransfer),
+        list => Promise.all(list)
+    );
+
     public render() {
         return (
             <div className='history'>
-                {this.state.list && this.state.list.map(item => {
+                {this.state.balance.map(item => {
+                    return (
+                        <div className='bet-line' key={item.id}>
+                            <span className='item'>Заведено денег: {item.amount / Math.pow(10, 8)} WAVES</span>
+                        </div>
+                    );
+                })}
+                <hr/>
+                {this.state.unconfirmed.map(item => {
                     const date = new Date(item.gameId);
                     const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
-                    const getIncome = () => getResult(item);
-                    const button = <button disabled={!item.success || item.assigned}
-                                           onClick={getIncome} type='button'
-                                           className={item.assigned || !item.success ? 'btn btn-secondary' : 'btn btn-primary'}>
-                        {item.assigned ? 'Получено' : 'Забрать'}</button>;
+                    const button = '<span>In progress</span>';
 
                     return (
                         <div className='bet-line' key={item.tx.id}>
                             <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
-                            <span className='item'>Выигрыш: {item.canGetBack}</span>
+                            <span className='item'>Выигрыш: --</span>
                             <span className='item'>Игра: {template}</span>
                             {button}
                         </div>
                     );
-                }) || null}
+                })}
+                {this.state.other.map(item => {
+                    const date = new Date(item.gameId);
+                    const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+                    const button = item.success ? '<span>Уже забрал</span>' : '<span>---</span>';
+
+                    return (
+                        <div className='bet-line' key={item.tx.id}>
+                            <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
+                            <span className='item'>Выигрыш: --</span>
+                            <span className='item'>Игра: {template}</span>
+                            {button}
+                        </div>
+                    );
+                })}
             </div>
         );
     }
@@ -90,7 +148,9 @@ export namespace History {
     }
 
     export interface IState {
-        list: Array<IBetResult>;
+        balance: Array<api.TTransferTransaction<number>>;
+        unconfirmed: Array<ITransferWithBet>;
+        other: Array<IBetResult>;
     }
 
 }

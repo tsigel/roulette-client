@@ -3,7 +3,7 @@ import { splitEvery } from 'ramda';
 import { canSetBet } from '../utils';
 import { CELLS } from '../cell';
 import { History } from '../history';
-import { setBet } from '../bets/setBet';
+import { registerBet } from '../bets/registerBet';
 
 
 export class App extends React.Component<App.IProps, App.IState> {
@@ -58,7 +58,7 @@ export class App extends React.Component<App.IProps, App.IState> {
                             <div className='column'>
                                 {column.slice().reverse().map(([bet, options]) => {
                                     const className = options.isRed ? 'red bet' : 'bet';
-                                    return <div onClick={() => setBet(0, Number(bet))}
+                                    return <div onClick={() => registerBet(0, Number(bet))}
                                                 className={className}>{bet}</div>;
                                 })}
                             </div>
@@ -66,17 +66,17 @@ export class App extends React.Component<App.IProps, App.IState> {
                     })}
                 </div>
                 <div className={'line'}>
-                    <div onClick={() => setBet(4, 0)}>Первая 12</div>
-                    <div onClick={() => setBet(4, 1)}>Вторая 12</div>
-                    <div onClick={() => setBet(4, 2)}>Третья 12</div>
+                    <div onClick={() => registerBet(4, 0)}>Первая 12</div>
+                    <div onClick={() => registerBet(4, 1)}>Вторая 12</div>
+                    <div onClick={() => registerBet(4, 2)}>Третья 12</div>
                 </div>
                 <div className={'line'}>
-                    <div onClick={() => setBet(3, 1)}>1-18</div>
-                    <div onClick={() => setBet(2, 1)}>Чёт</div>
-                    <div onClick={() => setBet(1, 1)}>Красное</div>
-                    <div onClick={() => setBet(1, 0)}>Чёрное</div>
-                    <div onClick={() => setBet(2, 0)}>Нечёт</div>
-                    <div onClick={() => setBet(3, 0)}>19-36</div>
+                    <div onClick={() => registerBet(3, 1)}>1-18</div>
+                    <div onClick={() => registerBet(2, 1)}>Чёт</div>
+                    <div onClick={() => registerBet(1, 1)}>Красное</div>
+                    <div onClick={() => registerBet(1, 0)}>Чёрное</div>
+                    <div onClick={() => registerBet(2, 0)}>Нечёт</div>
+                    <div onClick={() => registerBet(3, 0)}>19-36</div>
                 </div>
                 <div>
                     <History/>
