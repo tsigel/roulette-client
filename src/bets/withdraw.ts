@@ -25,7 +25,7 @@ export function withdraw(betResult: IBetResult): Promise<void> {
             }
         })
             .then((json: string) => JSON.parse(json))
-            .then((tx: api.TTransferTransaction<string | number>) => {
+            .then((tx: api.TTransferTransaction<number>) => {
                 if (!('version' in tx)) {
                     return Promise.reject('Wrong tx version!');
                 }
@@ -35,8 +35,8 @@ export function withdraw(betResult: IBetResult): Promise<void> {
                     type: 12,
                     data: {
                         data: [
-                            { key: betResult.tx.id, type: 'string', value: tx.id },
-                            { key: `${betResult.tx.id}_fees`, type: 'integer', value: fee + 0.005 * Math.pow(10, 8) }
+                            { key: `${betResult.tx.id}_withdraw`, type: 'string', value: tx.id },
+                            { key: `${betResult.tx.id}_withdraw_fees`, type: 'integer', value: fee + 0.005 * Math.pow(10, 8) }
                         ],
                         fee: {
                             tokens: 0.005,

@@ -7,7 +7,7 @@ import { BigNumber } from '@waves/data-entities/dist/libs/bignumber';
 
 export function getCurrentFees(id: string): Promise<number> {
     return getState()
-        .then(state => fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${id}_fees`))
+        .then(state => fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${id}_withdraw_fees`))
         .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
         .then(data => data.value)
         .catch(() => 0);
@@ -63,7 +63,7 @@ export function getResultByBet(state: WavesKeeper.IState) {
         Promise.all([
             fetch(`${state.network.server}addresses/data/${ROULETTE_ORACLE_ADDRESS}/${bet.key}`)
                 .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e))),
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${bet.tx.id}`)
+            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${bet.tx.id}_withdraw`)
                 .then(r => r.ok ? r.json() : Promise.resolve(null))
                 .then(data => data ? data.value : null)
                 .then(data => data ?
@@ -78,7 +78,7 @@ export function getResultByBet(state: WavesKeeper.IState) {
                     const assigned = status;
                     const canGetBack = success ? new BigNumber(getBackAmount(bet.betType, bet.amount))
                         .minus(fee / Math.pow(10, 8))
-                        .minus(0.01).toNumber() : 0;
+                        .minus(0.025).toNumber() : 0;
 
                     return { ...bet, pending: false, success, canGetBack, assigned };
                 });

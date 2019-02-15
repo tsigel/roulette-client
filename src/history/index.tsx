@@ -97,6 +97,7 @@ export class History extends React.Component<History.IProps, History.IState> {
                     const date = new Date(item.gameId);
                     const getBack = () => withdraw(item);
                     const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+                    const getBackText = item.success ? item.canGetBack : '---';
                     const button = item.success ? item.assigned ? <span>Уже забрал</span> :
                         <button type="button" onClick={() => getBack()} className="btn btn-primary">Забрать</button> :
                         <span>Проиграл</span>;
@@ -104,7 +105,7 @@ export class History extends React.Component<History.IProps, History.IState> {
                     return (
                         <div className='bet-line' key={item.tx.id}>
                             <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
-                            <span className='item'>Выигрыш: --</span>
+                            <span className='item'>Выигрыш: {getBackText}</span>
                             <span className='item'>Игра: {template}</span>
                             {button}
                         </div>
