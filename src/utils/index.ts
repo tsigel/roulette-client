@@ -184,15 +184,23 @@ export function fromBase58(data: string): string {
 }
 
 export function getLastGame(list: Array<number> = generateGameList()): number | null {
-    return last(list.filter(lt(__, Date.now()))) || null;
+    return last(getTodayGamesBeforeNow(list)) || null;
 }
 
 export function getNextGame(list: Array<number> = generateGameList()): number | null {
-    return head(list.filter(gt(__, Date.now()))) || null;
+    return head(getTodayGamesAfterNow(list)) || null;
 }
 
-export function getNextGameOffset(nextGame: number | null = getNextGame()): number | null {
-    return nextGame ? nextGame - Date.now() : null;
+export function getTodayGamesBeforeNow(list: Array<number> = generateGameList()): Array<number> {
+    return list.filter(lt(__, Date.now()));
+}
+
+export function getTodayGamesAfterNow(list: Array<number> = generateGameList()): Array<number> {
+    return list.filter(gt(__, Date.now()));
+}
+
+export function getLastGames(count: number): Array<number> {
+    // TODO!
 }
 
 export function canSetBet() {
