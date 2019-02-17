@@ -1,4 +1,4 @@
-import { head, gt, __, last, lt } from 'ramda';
+import { head, __, last, lt } from 'ramda';
 import { GAME_INTERVAL, LIMIT, ROULETTE_ADDRESS, ROULETTE_ORACLE_ADDRESS } from '../constants';
 import { libs } from '@waves/signature-generator';
 import { api } from '@waves/ts-types';
@@ -6,10 +6,7 @@ import { BigNumber } from '@waves/data-entities/dist/libs/bignumber';
 
 
 export function getCurrentFees(id: string): Promise<number> {
-    return getState()
-        .then(state => fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${id}_withdraw_fees`))
-        .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
-        .then(data => data.value)
+    return getRouletteDataValue<number>(`${id}_withdraw_fees`)
         .catch(() => 0);
 }
 
@@ -26,6 +23,10 @@ export function getUserTransactions(count: number = 500) {
         .then(head as any) as Promise<Array<api.TTransaction<string | number>>>;
 }
 
+export function getRouletteHistory(gameList: Array<number>): Promise<Array<number>> {
+    return Promise.all(gameList.map(getOracleDataValue)) as any;
+}
+
 export function isTransfer(tx: api.TTransaction<string | number>): tx is api.TTransferTransaction<number> {
     return tx.type === 4 && tx.recipient === ROULETTE_ADDRESS;
 }
@@ -34,15 +35,13 @@ export function getUserBetByTransfer(tx: api.TTransferTransaction<number>): Prom
 
     return getState().then(state =>
         Promise.all([
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${tx.id}`)
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e))),
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${tx.id}_round`)
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+            getRouletteDataValue<any>(tx.id),
+            getRouletteDataValue<any>(`${tx.id}_round`)
         ]).then(([bets, round]) => {
-            const bytes = libs.base64.toByteArray(bets.value.replace('base64:', ''));
-            const gameId = Number(fromBase58(round.value));
+            const bytes = libs.base64.toByteArray(bets.replace('base64:', ''));
+            const gameId = Number(fromBase58(round));
             const [betType, bet] = bytes;
-            const key = round.value;
+            const key = round;
             const amount = Number(tx.amount) / Math.pow(10, 8);
 
             return { gameId, betType, bet, amount, key, tx, pending: true };
@@ -61,11 +60,9 @@ export function getBetResult(list: Array<ITransferWithBet>): Promise<Array<IBetR
 export function getResultByBet(state: WavesKeeper.IState) {
     return (bet: ITransferWithBet): Promise<IBetResult> =>
         Promise.all([
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ORACLE_ADDRESS}/${bet.key}`)
-                .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e))),
-            fetch(`${state.network.server}addresses/data/${ROULETTE_ADDRESS}/${bet.tx.id}_withdraw`)
-                .then(r => r.ok ? r.json() : Promise.resolve(null))
-                .then(data => data ? data.value : null)
+            getOracleDataValue<any>(bet.key),
+            getRouletteDataValue(`${bet.tx.id}_withdraw`)
+                .catch(() => null)
                 .then(data => data ?
                     fetch(`${state.network.server}transactions/info/${data}`)
                         .then(r => r.ok ? Promise.resolve(true) : Promise.resolve(false)) :
@@ -73,12 +70,16 @@ export function getResultByBet(state: WavesKeeper.IState) {
         ])
             .then(([data, status]) => {
                 return getCurrentFees(bet.tx.id).then(fee => {
-                    const bytes = Array.from(libs.base64.toByteArray((data.value as any).replace('base64:', ''))).slice(1);
+                    const bytes = Array.from(libs.base64.toByteArray((data).replace('base64:', ''))).slice(1);
                     const success = bytes[bet.betType] === bet.bet;
                     const assigned = status;
+                    console.log(fee);
                     const canGetBack = success ? new BigNumber(getBackAmount(bet.betType, bet.amount))
                         .minus(fee / Math.pow(10, 8))
-                        .minus(0.025).toNumber() : 0;
+                        .minus(0.005)
+                        .minus(0.005)
+                        .minus(0.005)
+                        .toNumber() : 0;
 
                     return { ...bet, pending: false, success, canGetBack, assigned };
                 });
@@ -183,24 +184,29 @@ export function fromBase58(data: string): string {
     return libs.converters.byteArrayToString(bytes);
 }
 
-export function getLastGame(list: Array<number> = generateGameList()): number | null {
-    return last(getTodayGamesBeforeNow(list)) || null;
+export function getLastGame(list: Array<number> = generateGameList()): number {
+    const beforeNowList = getTodayGamesBeforeNow(list);
+    return beforeNowList.length ? last(beforeNowList) as number : getStartOfDay() - GAME_INTERVAL;
 }
 
-export function getNextGame(list: Array<number> = generateGameList()): number | null {
-    return head(getTodayGamesAfterNow(list)) || null;
+export function getNextGame(list: Array<number> = generateGameList()): number {
+    return getLastGame(list) + GAME_INTERVAL;
 }
 
 export function getTodayGamesBeforeNow(list: Array<number> = generateGameList()): Array<number> {
     return list.filter(lt(__, Date.now()));
 }
 
-export function getTodayGamesAfterNow(list: Array<number> = generateGameList()): Array<number> {
-    return list.filter(gt(__, Date.now()));
-}
+export function getLastGameIdList(count: number = 10): Array<number> {
+    let last = getLastGame();
+    const result: Array<number> = [];
 
-export function getLastGames(count: number): Array<number> {
-    // TODO!
+    for (let i = 0; i < count; i++) {
+        result.push(last);
+        last = last - GAME_INTERVAL;
+    }
+
+    return result;
 }
 
 export function canSetBet() {
@@ -254,8 +260,9 @@ export const getUserAddress = (() => {
 })();
 
 export const WavesKeeper: {
-    signAndPublishTransaction(data: { type: number; data: any }): Promise<any>
-    signTransaction(data: { type: number; data: any }): Promise<string>
+    signTransactionPackage(data: Array<{ type: number; data: any }>): Promise<Array<string>>;
+    signAndPublishTransaction(data: { type: number; data: any }): Promise<string>;
+    signTransaction(data: { type: number; data: any }): Promise<string>;
     publicState(): Promise<WavesKeeper.IState>;
     on(event: 'update', cb: (data: WavesKeeper.IState) => any): void;
 } = (window as any).WavesKeeper;
@@ -277,4 +284,20 @@ export namespace WavesKeeper {
         account: { address: string } | null,
         locked: boolean;
     }
+}
+
+export function getDataValue(key: string | number, address: string) {
+    const dataKey = encodeURIComponent(String(key));
+    return getState().then(state =>
+        fetch(`${state.network.server}addresses/data/${address}/${dataKey}`))
+        .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+        .then(data => data.value);
+}
+
+export function getRouletteDataValue<T>(key: string | number): Promise<T> {
+    return getDataValue(key, ROULETTE_ADDRESS);
+}
+
+export function getOracleDataValue<T>(key: string | number): Promise<T> {
+    return getDataValue(key, ROULETTE_ORACLE_ADDRESS);
 }

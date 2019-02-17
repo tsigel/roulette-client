@@ -27,7 +27,6 @@ export function registerBet(betType: number, bet: number): Promise<any> {
             .catch(() => ({ value: 0 }))
             .then(data => [tx, data.value]))
         .then(([tx, betSum]) => {
-            debugger;
             return WavesKeeper.signTransaction({
                 type: 12,
                 data: {
@@ -49,8 +48,5 @@ export function registerBet(betType: number, bet: number): Promise<any> {
             });
         })
         .then(broadcast)
-        .catch((e) => {
-            debugger;
-            console.error(e);
-        });
+        .catch(console.error);
 }

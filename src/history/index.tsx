@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {
-    getBetResult,
+    getBetResult, getLastGame, getLastGameIdList, getRouletteHistory,
     getUserAddress,
     getUserBetByTransfer,
     getUserPayments,
@@ -9,8 +9,9 @@ import {
     ITransferWithBet
 } from '../utils';
 import { api } from '@waves/ts-types';
-import { pathEq, pipe, map, uniqBy, path } from 'ramda';
+import { pathEq, pipe, map, uniqBy, path, propEq, head } from 'ramda';
 import { withdraw } from '../bets';
+import { CELLS } from '../cell';
 
 
 export class History extends React.Component<History.IProps, History.IState> {
@@ -18,13 +19,14 @@ export class History extends React.Component<History.IProps, History.IState> {
     public state: History.IState = {
         balance: [],
         unconfirmed: [],
-        other: []
+        other: [],
+        history: []
     };
 
     constructor(props: History.IProps) {
         super(props);
 
-        const loop = () => {
+        const userBetsHistoryLoop = () => {
             getUserPayments()
                 .then(this.filterResolvedPayments)
                 .then(list => {
@@ -35,25 +37,68 @@ export class History extends React.Component<History.IProps, History.IState> {
                             return getBetResult(withBet)
                                 .then(list => {
 
-                                    const unconfirmed = uniqBy(path(['tx', 'id']), [
-                                        ...list.filter(item => item.pending === true),
-                                        ...this.state.unconfirmed
-                                    ]);
-
                                     const other = uniqBy(path(['tx', 'id']), [
                                         ...list.filter((item: ITransferWithBet) => item.pending === false),
                                         ...this.state.other
                                     ]);
 
+                                    const unconfirmed = uniqBy(path(['tx', 'id']), [
+                                        ...list.filter(item => item.pending === true),
+                                        ...this.state.unconfirmed.filter(item => !other.find(pathEq(['tx', 'id'], item)))
+                                    ]);
+
                                     this.setState({ other, unconfirmed, balance });
-                                    setTimeout(loop, 1000);
+                                    setTimeout(userBetsHistoryLoop, 1000);
                                 });
                         });
                 });
         };
 
+        const gameResultHistoryLoop = () => {
+            const history = this.state.history;
+
+            if (!history.length) {
+                const list = getLastGameIdList(12);
+                getRouletteHistory(list)
+                    .then(resultList => {
+                        const history = resultList.map((result, i) => {
+                            const id = list[i];
+                            return { id, result };
+                        });
+                        this.setState({ history });
+
+                        setTimeout(gameResultHistoryLoop, 1000 * 30);
+                    });
+                return null;
+            }
+
+            const last = getLastGame();
+            const has = history.find(propEq('id', last));
+
+            if (has) {
+                setTimeout(gameResultHistoryLoop, 1000 * 30);
+                return null;
+            }
+
+            getRouletteHistory([last])
+                .then(head as any)
+                .then((result: any) => {
+                    this.setState({
+                        history: [
+                            { id: last, result: result as number },
+                            ...history.slice(0, 11)
+                        ]
+                    });
+
+                    setTimeout(gameResultHistoryLoop, 1000 * 30);
+                });
+
+        };
+
+        gameResultHistoryLoop();
+
         getUserAddress()
-            .then(loop);
+            .then(userBetsHistoryLoop);
     }
 
     private filterResolvedPayments = (list: Array<api.TTransferTransaction<number>>) =>
@@ -71,6 +116,13 @@ export class History extends React.Component<History.IProps, History.IState> {
     public render() {
         return (
             <div className='history'>
+                {this.state.history.map(item => {
+                    const cell = CELLS[item.result];
+                    const red = cell.isRed ? 'red' : '';
+                    const black = cell.isBlack ? 'black' : '';
+
+                    return <div className={'history-item ' + red + black}>{item.result}</div>;
+                })}
                 {this.state.balance.map(item => {
                     return (
                         <div className='bet-line' key={item.id}>
@@ -82,7 +134,7 @@ export class History extends React.Component<History.IProps, History.IState> {
                 {this.state.unconfirmed.map(item => {
                     const date = new Date(item.gameId);
                     const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
-                    const button = '<span>In progress</span>';
+                    const button = <span>In progress</span>;
 
                     return (
                         <div className='bet-line' key={item.tx.id}>
@@ -157,6 +209,7 @@ export namespace History {
         balance: Array<api.TTransferTransaction<number>>;
         unconfirmed: Array<ITransferWithBet>;
         other: Array<IBetResult>;
+        history: Array<{ id: number, result: number }>;
     }
 
 }
