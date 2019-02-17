@@ -1,0 +1,36 @@
+.roulette-history {
+  text-align: center;
+  width: 100%;
+
+  .content {
+    width: 100%;
+    border: 1px solid black;
+    overflow: hidden;
+    border-radius: 3px;
+
+    .row {
+      width: 100%;
+      margin: 0;
+      border-bottom: 1px solid black;
+      text-align: center;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .item {
+        background-color: green;
+        color: white;
+
+        &.red {
+          background-color: red;
+        }
+
+        &.black {
+          background-color: #1e1e1e;
+        }
+      }
+    }
+  }
+
+}

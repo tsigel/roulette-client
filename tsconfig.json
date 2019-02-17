@@ -22,8 +22,5 @@
       "app/*": ["./app/*"]
     }
   },
-  "files": [
-    "webpack.config.ts"
-  ],
   "exclude": ["dist", "node_modules"]
 }

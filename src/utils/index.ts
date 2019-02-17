@@ -3,6 +3,7 @@ import { GAME_INTERVAL, LIMIT, ROULETTE_ADDRESS, ROULETTE_ORACLE_ADDRESS } from 
 import { libs } from '@waves/signature-generator';
 import { api } from '@waves/ts-types';
 import { BigNumber } from '@waves/data-entities/dist/libs/bignumber';
+import { date as createDateFactory } from 'ts-utils';
 
 
 export function getCurrentFees(id: string): Promise<number> {
@@ -301,3 +302,5 @@ export function getRouletteDataValue<T>(key: string | number): Promise<T> {
 export function getOracleDataValue<T>(key: string | number): Promise<T> {
     return getDataValue(key, ROULETTE_ORACLE_ADDRESS);
 }
+
+export const date = createDateFactory('hh:mm DD.MM');
