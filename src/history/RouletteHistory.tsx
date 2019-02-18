@@ -30,8 +30,9 @@ export class RouletteHistory extends React.Component<RouletteHistory.IProps, Rou
                         });
                         this.setState({ history });
 
-                        setTimeout(gameResultHistoryLoop, 1000 * 30);
-                    });
+                        setTimeout(gameResultHistoryLoop, 1000 * 5);
+                    })
+                    .catch(() => setTimeout(gameResultHistoryLoop, 1000 * 5));
                 return null;
             }
 
@@ -39,7 +40,7 @@ export class RouletteHistory extends React.Component<RouletteHistory.IProps, Rou
             const has = history.find(propEq('id', last));
 
             if (has) {
-                setTimeout(gameResultHistoryLoop, 1000 * 30);
+                setTimeout(gameResultHistoryLoop, 1000 * 5);
                 return null;
             }
 
@@ -53,8 +54,9 @@ export class RouletteHistory extends React.Component<RouletteHistory.IProps, Rou
                         ]
                     });
 
-                    setTimeout(gameResultHistoryLoop, 1000 * 30);
-                });
+                    setTimeout(gameResultHistoryLoop, 1000 * 5);
+                })
+                .catch(() => setTimeout(gameResultHistoryLoop, 1000 * 5));
 
         };
 

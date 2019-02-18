@@ -33,7 +33,9 @@ export class History extends React.Component<History.IProps, History.IState> {
                     const getBackText = item.success ? item.canGetBack : '---';
                     const button = item.success ?
                         <button type="button" onClick={() => getBack()} className="btn btn-primary">Забрать</button> :
-                        <span>Проиграл</span>;
+                        <div className="spinner-border text-primary" role="status">
+                            <span className="sr-only">Loading...</span>
+                        </div>;
 
                     return (
                         <div className='bet-line other' key={item.tx.id}>
