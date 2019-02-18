@@ -32,7 +32,7 @@ export class Balances extends React.Component<Balances.IProps, Balances.IState> 
                                 <div className={'col-4 item'}>{item.amount / Math.pow(10, 8)}</div>
                                 <div className={'col-4'}>WAVES</div>
                                 <div className={'col-4'}>
-                                    <button type="button" className="btn btn-sm btn-primary">Забрать</button>
+                                    {/*<button type="button" className="btn btn-sm btn-primary">Забрать</button>*/}
                                 </div>
                             </div>
                         );
