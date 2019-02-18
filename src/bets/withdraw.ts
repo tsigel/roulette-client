@@ -1,7 +1,7 @@
 import { broadcast, getCurrentFees, getUserAddress, IBetResult, waitTransaction, WavesKeeper } from '../utils';
 import { ROULETTE_PUBLIC_KEY } from '../constants';
 import { api } from '@waves/ts-types';
-import { transfer } from 'waves-transactions';
+import { transfer } from '@waves/waves-transactions';
 
 
 export function withdraw(betResult: IBetResult): Promise<void> {

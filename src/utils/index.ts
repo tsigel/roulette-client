@@ -109,7 +109,6 @@ export function getResultByBet(state: WavesKeeper.IState) {
                         .minus(fee / Math.pow(10, 8))
                         .minus(0.005)
                         .minus(0.005)
-                        .minus(0.005)
                         .toNumber() : 0;
 
                     return { ...bet, pending: false, success, canGetBack, assigned };
@@ -125,13 +124,13 @@ export function getResultByBet(state: WavesKeeper.IState) {
 export function getBackAmount(betType: number, amount: number): number {
     switch (betType) {
         case 0:
-            return amount * 36;
+            return (amount - 0.005) * 36;
         case 1:
         case 2:
         case 3:
-            return amount * 2;
+            return (amount - 0.005) * 2;
         default:
-            return amount * 3;
+            return (amount - 0.005) * 3;
     }
 }
 
@@ -317,7 +316,7 @@ export function getTransferWithId(tokens: number, senderPublicKey: string): api.
         timestamp,
         recipient: ROULETTE_ADDRESS,
         amount: tokens * Math.pow(10, 8),
-        assetId: 'WAVES',
+        assetId: undefined,
         senderPublicKey,
         fee: 0.001 * Math.pow(10, 8)
     }) as any;
