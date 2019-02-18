@@ -38,7 +38,7 @@ export class History extends React.Component<History.IProps, History.IState> {
                         </div>;
 
                     return (
-                        <div className='bet-line other' key={item.tx.id}>
+                        <div className='bet-line unconfirmed' key={item.tx.id}>
                             <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
                             <span className='item'>Выигрыш: {getBackText}</span>
                             <span className='item'>Игра: {template}</span>
