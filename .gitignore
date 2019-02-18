@@ -1,7 +1,7 @@
 .idea
-/**/*.js
-/**/*.jsx
-/**/*.jsx.map
-/**/*.js.map
+src/**/*.js
+src/**/*.jsx
+src/**/*.jsx.map
+src/**/*.js.map
 dist
 node_modules
