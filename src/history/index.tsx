@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { IBetResult, ITransferWithBet } from '../utils';
+import { date, IBetResult } from '../utils';
 import { api } from '@waves/ts-types';
 import { withdraw } from '../bets';
 import { storage } from '../storage/Storage';
@@ -28,30 +28,29 @@ export class History extends React.Component<History.IProps, History.IState> {
         return (
             <div className='history'>
                 {this.state.unconfirmed.map(item => {
-                    const date = new Date(item.gameId);
-                    const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
-                    const button = <span>In progress</span>;
+                    const template = date(item.gameId);
+                    const getBack = () => withdraw(item);
+                    const getBackText = item.success ? item.canGetBack : '---';
+                    const button = item.success ?
+                        <button type="button" onClick={() => getBack()} className="btn btn-primary">Забрать</button> :
+                        <span>Проиграл</span>;
 
                     return (
-                        <div className='bet-line' key={item.tx.id}>
+                        <div className='bet-line other' key={item.tx.id}>
                             <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
-                            <span className='item'>Выигрыш: --</span>
+                            <span className='item'>Выигрыш: {getBackText}</span>
                             <span className='item'>Игра: {template}</span>
                             {button}
                         </div>
                     );
                 })}
                 {this.state.other.map(item => {
-                    const date = new Date(item.gameId);
-                    const getBack = () => withdraw(item);
-                    const template = `${date.getHours()}:${date.getMinutes()} ${date.getDay()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+                    const template = date(item.gameId);
                     const getBackText = item.success ? item.canGetBack : '---';
-                    const button = item.success ? item.assigned ? <span>Уже забрал</span> :
-                        <button type="button" onClick={() => getBack()} className="btn btn-primary">Забрать</button> :
-                        <span>Проиграл</span>;
+                    const button = item.success ? <span>Уже забрал</span> : <span>Проиграл</span>;
 
                     return (
-                        <div className='bet-line' key={item.tx.id}>
+                        <div className='bet-line other' key={item.tx.id}>
                             <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
                             <span className='item'>Выигрыш: {getBackText}</span>
                             <span className='item'>Игра: {template}</span>
@@ -103,7 +102,7 @@ export namespace History {
 
     export interface IState {
         balance: Array<api.TTransferTransaction<number>>;
-        unconfirmed: Array<ITransferWithBet>;
+        unconfirmed: Array<IBetResult>;
         other: Array<IBetResult>;
     }
 

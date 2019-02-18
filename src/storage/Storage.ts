@@ -16,6 +16,10 @@ export class Storage extends EventEmitter<Storage.IEvents> {
         this._loop();
     }
 
+    public get<K extends keyof Storage.IEvents>(name: K): Storage.IEvents[K] {
+        return this.state[name];
+    }
+
     private _loop() {
         getUserPayments()
             .then(this._filterResolvedPayments)
@@ -28,14 +32,26 @@ export class Storage extends EventEmitter<Storage.IEvents> {
                         return getBetResult(withBet)
                             .then(list => {
 
+                                const isClosed = (item: IBetResult) => {
+                                    if (item.pending === true) {
+                                        return false;
+                                    }
+
+                                    if (item.success) {
+                                        return item.assigned;
+                                    }
+
+                                    return true;
+                                };
+
                                 const other = uniqBy(path(['tx', 'id']), [
-                                    ...list.filter((item: IBetResult) => item.pending === false && item.assigned === false),
+                                    ...list.filter(isClosed),
                                     ...this.state.other
                                 ]);
 
                                 const unconfirmed = uniqBy(path(['tx', 'id']), [
-                                    ...list.filter(item => item.assigned === true),
-                                    ...this.state.unconfirmed.filter(item => !other.find(pathEq(['tx', 'id'], item)))
+                                    ...list.filter(item => !isClosed(item)),
+                                    ...this.state.unconfirmed.filter(item => !other.find(pathEq(['tx', 'id'], item.tx.id)))
                                 ]);
 
                                 this.setState({ other, unconfirmed, balance });
@@ -72,7 +88,7 @@ export namespace Storage {
 
     export interface IEvents {
         balance: Array<api.TTransferTransaction<number>>;
-        unconfirmed: Array<ITransferWithBet>;
+        unconfirmed: Array<IBetResult>;
         other: Array<IBetResult>;
     }
 

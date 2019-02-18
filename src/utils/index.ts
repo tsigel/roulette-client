@@ -4,7 +4,37 @@ import { libs } from '@waves/signature-generator';
 import { api } from '@waves/ts-types';
 import { BigNumber } from '@waves/data-entities/dist/libs/bignumber';
 import { date as createDateFactory } from 'ts-utils';
+import { transfer } from '@waves/waves-transactions';
 
+
+export const getState = (() => {
+    const promise = getKeeperApi()
+        .then(api => api.publicState());
+    return () => promise;
+})();
+
+export const getUserData = (() => {
+    const promise = getState()
+        .then(() => new Promise<{ address: string, publicKey: string }>(resolve => {
+            const handler = (state: WavesKeeper.IState) => {
+                if (state.account) {
+                    resolve({ address: state.account.address, publicKey: state.account.publicKey });
+                }
+            };
+
+            WavesKeeper.publicState().then(state => {
+                if (!state.account) {
+                    WavesKeeper.on('update', handler);
+                } else {
+                    resolve({ address: state.account.address, publicKey: state.account.publicKey });
+                }
+            });
+        }));
+    return () => promise;
+})();
+
+export const getUserAddress = () => getUserData()
+    .then(data => data.address);
 
 export function getCurrentFees(id: string): Promise<number> {
     return getRouletteDataValue<number>(`${id}_withdraw_fees`)
@@ -118,11 +148,15 @@ export function broadcast(body: string): Promise<api.TTransaction<string | numbe
 }
 
 export function waitTransaction(tx: api.TTransaction<string | number>): Promise<api.TTransaction<string | number>> {
-    return getState()
-        .then(state => fetch(`${state.network.server}transactions/info/${tx.id}`))
-        .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)))
+    return getTxById(tx.id)
         .catch(() => wait(1000)
             .then(() => waitTransaction(tx)));
+}
+
+export function getTxById(id: string): Promise<api.TTransaction<number>> {
+    return getState()
+        .then(state => fetch(`${state.network.server}transactions/info/${id}`))
+        .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(e)));
 }
 
 export function wait(timeout: number): Promise<void> {
@@ -234,32 +268,6 @@ export function getKeeperApi(): Promise<WavesKeeper.API> {
     });
 }
 
-export const getState = (() => {
-    const promise = getKeeperApi()
-        .then(api => api.publicState());
-    return () => promise;
-})();
-
-export const getUserAddress = (() => {
-    const promise = getState()
-        .then(() => new Promise<string>(resolve => {
-            const handler = (state: WavesKeeper.IState) => {
-                if (state.account) {
-                    resolve(state.account.address);
-                }
-            };
-
-            WavesKeeper.publicState().then(state => {
-                if (!state.account) {
-                    WavesKeeper.on('update', handler);
-                } else {
-                    resolve(state.account.address);
-                }
-            });
-        }));
-    return () => promise;
-})();
-
 export const WavesKeeper: {
     signTransactionPackage(data: Array<{ type: number; data: any }>): Promise<Array<string>>;
     signAndPublishTransaction(data: { type: number; data: any }): Promise<string>;
@@ -282,7 +290,7 @@ export namespace WavesKeeper {
 
     export interface IState {
         network: { server: string },
-        account: { address: string } | null,
+        account: { address: string, publicKey: string } | null,
         locked: boolean;
     }
 }
@@ -301,6 +309,35 @@ export function getRouletteDataValue<T>(key: string | number): Promise<T> {
 
 export function getOracleDataValue<T>(key: string | number): Promise<T> {
     return getDataValue(key, ROULETTE_ORACLE_ADDRESS);
+}
+
+export function getTransferWithId(tokens: number, senderPublicKey: string): api.TTransferTransaction<number> {
+    const timestamp = Date.now();
+    return transfer({
+        timestamp,
+        recipient: ROULETTE_ADDRESS,
+        amount: tokens * Math.pow(10, 8),
+        assetId: 'WAVES',
+        senderPublicKey,
+        fee: 0.001 * Math.pow(10, 8)
+    }) as any;
+}
+
+export function getKeeperParamsFromTransfer(tx: api.TTransferTransaction<number>) {
+    return {
+        type: 4,
+        data: {
+            ...tx,
+            amount: {
+                coins: tx.amount,
+                assetId: tx.assetId || 'WAVES'
+            },
+            fee: {
+                coins: tx.fee,
+                assetId: tx.feeAssetId || 'WAVES'
+            }
+        }
+    };
 }
 
 export const date = createDateFactory('hh:mm DD.MM');
