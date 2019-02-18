@@ -104,11 +104,10 @@ export function getResultByBet(state: WavesKeeper.IState) {
                     const bytes = Array.from(libs.base64.toByteArray((data).replace('base64:', ''))).slice(1);
                     const success = bytes[bet.betType] === bet.bet;
                     const assigned = status;
-                    console.log(fee);
                     const canGetBack = success ? new BigNumber(getBackAmount(bet.betType, bet.amount))
                         .minus(fee / Math.pow(10, 8))
                         .minus(0.005)
-                        .minus(0.005)
+                        .minus(assigned ? 0 : 0.005)
                         .toNumber() : 0;
 
                     return { ...bet, pending: false, success, canGetBack, assigned };
