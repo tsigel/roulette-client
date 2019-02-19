@@ -32,16 +32,16 @@ export class History extends React.Component<History.IProps, History.IState> {
                     const getBack = () => withdraw(item);
                     const getBackText = item.success ? item.canGetBack : '---';
                     const button = item.success ?
-                        <button type="button" onClick={() => getBack()} className="btn btn-primary">Забрать</button> :
+                        <button type="button" onClick={() => getBack()} className="btn btn-primary">Payout</button> :
                         <div className="spinner-border text-primary" role="status">
                             <span className="sr-only">Loading...</span>
                         </div>;
 
                     return (
                         <div className='bet-line unconfirmed' key={item.tx.id}>
-                            <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
-                            <span className='item'>Выигрыш: {getBackText}</span>
-                            <span className='item'>Игра: {template}</span>
+                            <span className='item'>Field {getBetText(item.betType, item.bet)}</span>
+                            <span className='item'>Win amount: {getBackText}</span>
+                            <span className='item'>Game: {template}</span>
                             {button}
                         </div>
                     );
@@ -49,13 +49,13 @@ export class History extends React.Component<History.IProps, History.IState> {
                 {this.state.other.map(item => {
                     const template = date(item.gameId);
                     const getBackText = item.success ? item.canGetBack : '---';
-                    const button = item.success ? <span>Уже забрал</span> : <span>Проиграл</span>;
+                    const button = item.success ? <span>Withdrawn</span> : <span>Loss</span>;
 
                     return (
                         <div className='bet-line other' key={item.tx.id}>
-                            <span className='item'>Поле {getBetText(item.betType, item.bet)}</span>
-                            <span className='item'>Выигрыш: {getBackText}</span>
-                            <span className='item'>Игра: {template}</span>
+                            <span className='item'>Field {getBetText(item.betType, item.bet)}</span>
+                            <span className='item'>Win amount: {getBackText}</span>
+                            <span className='item'>Game: {template}</span>
                             {button}
                         </div>
                     );
@@ -71,9 +71,9 @@ function getBetText(betType: number, bet: number): string | unknown {
         case 0:
             return `Число ${bet}`;
         case 1:
-            return bet ? 'Красное' : 'Чёрное';
+            return bet ? 'Red' : 'Black';
         case 2:
-            return bet ? 'Чётное' : 'Нечётное';
+            return bet ? 'Even' : 'Odd';
         case 3:
             return bet ? '1-18' : '19-36';
         case 4:

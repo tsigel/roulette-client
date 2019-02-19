@@ -33,7 +33,7 @@ export class App extends React.Component<App.IProps, App.IState> {
 
     public render() {
         const cells = Object.entries(CELLS).sort(([a], [b]) => Number(a) - Number(b));
-        const canSetBet = this.state.canSetBet ? 'Можно ставить! Ставка 1 WAVES' : 'Нельзя ставить, ставки сделаны!';
+        const canSetBet = this.state.canSetBet ? 'You can make bet! Bet 1 WAVES' : 'Can\'t make bet now! Wait for next round';
         return (
             <div className={'main'}>
                 <div className={'row'}>
@@ -42,24 +42,24 @@ export class App extends React.Component<App.IProps, App.IState> {
                     </div>
                     <div className={'col-8'}>
                         <div>
-                            Рулетка крутится раз в 5 минут.<br/>
-                            Сделайте ставку на ближайший раунд. Можно кликнуть<br/>
-                            - на номер - выигрыш x36<br/>
-                            - на красное или черное - выигрыш x2<br/>
-                            - на чётное или нечётное - выигрыш x2<br/>
-                            - на первую или вторую половину стола - выигрыш x2<br/>
-                            - на ряд номеров - выигрыш x3<br/>
-                            - на одну из третей стола - выигрыш x3<br/>
+                            Roulette spins every 5 minutes.<br/>
+                            Place a bet on the next round. You can click<br/>
+                            - on a number - winning x36 *<br/>
+                            - on red or black - win x2 *<br/>
+                            - on even or odd - win x2 *<br/>
+                            - on the first or second half of the table-win x2 *<br/>
+                            - on a number of numbers-win x3 *<br/>
+                            - on one of the third table-win x3 *<br/>
                             <br/>
-                            Нужно подписать 2 транзакции: Transfer - передача денег, DataTransaction - регистрация
-                            ставки (комиссия будет вычтена из заведённых денег).<br/>
+                            You need to sign 2 transactions: Transfer-transfer of money, Data Transaction-registration rate 
+			    (the Commission will be deducted from the money).<br/>
                             <br/>
-                            Если ваша ставка сыграла, то рядом с ней появится кнопка "Забрать".<br/>
-                            Нужно будет подписать DataTransaction - регистрация вывода денег, и Transfer Transaction -
-                            вывод денег.<br/>
+                            If your bet is played, the "payout" button will appear next to it.<br/>
+                            You will need to sign the data Transaction - registration of withdrawal, 
+		            and Transfer Transaction - withdrawal.<br/>
                             <br/>
-                            Из выигрыша будут вычтены комиссии за транзакции от имени скрипта (две дата-транзакции и
-                            один трансфер, итого -0.015 WAVES).
+                            * Commissions for transactions on behalf of the script will be deducted from the winnings 
+			      (two date transactions and one transfer).
                         </div>
                     </div>
                     <div className={'col-2'}>
@@ -84,16 +84,16 @@ export class App extends React.Component<App.IProps, App.IState> {
                         })}
                     </div>
                     <div className={'line'}>
-                        <div onClick={() => registerBet(4, 0)}>Первая 12</div>
-                        <div onClick={() => registerBet(4, 1)}>Вторая 12</div>
-                        <div onClick={() => registerBet(4, 2)}>Третья 12</div>
+                        <div onClick={() => registerBet(4, 0)}>First 12</div>
+                        <div onClick={() => registerBet(4, 1)}>Second 12</div>
+                        <div onClick={() => registerBet(4, 2)}>Third 12</div>
                     </div>
                     <div className={'line'}>
                         <div onClick={() => registerBet(3, 1)}>1-18</div>
-                        <div onClick={() => registerBet(2, 1)}>Чёт</div>
-                        <div onClick={() => registerBet(1, 1)}>Красное</div>
-                        <div onClick={() => registerBet(1, 0)}>Чёрное</div>
-                        <div onClick={() => registerBet(2, 0)}>Нечёт</div>
+                        <div onClick={() => registerBet(2, 1)}>Even</div>
+                        <div onClick={() => registerBet(1, 1)}>Red</div>
+                        <div onClick={() => registerBet(1, 0)}>Black</div>
+                        <div onClick={() => registerBet(2, 0)}>Odd</div>
                         <div onClick={() => registerBet(3, 0)}>19-36</div>
                     </div>
                 </div>
