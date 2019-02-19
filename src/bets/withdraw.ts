@@ -22,7 +22,8 @@ export function withdraw(betResult: IBetResult): Promise<void> {
             timestamp: Date.now(),
             recipient: address,
             senderPublicKey: ROULETTE_PUBLIC_KEY,
-            amount: betResult.canGetBack * Math.pow(10, 8)
+            amount: betResult.canGetBack * Math.pow(10, 8),
+            fee: 0.005 * Math.pow(10, 8)
         });
         tx.proofs.push(betResult.tx.id);
 

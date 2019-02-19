@@ -69,6 +69,8 @@ export function registerBet(betType: number, bet: number): Promise<void> {
                             .then(waitTransaction)
                             .then(() => broadcast(data));
 
+                        promise.catch(() => registerBet(betType, bet));
+
                         const tx = JSON.parse(transfer);
                         storage.reserveBalance(tx.id, promise);
                     });
