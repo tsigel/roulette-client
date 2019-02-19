@@ -23,7 +23,11 @@ export function registerBet(betType: number, bet: number): Promise<void> {
 
         const nextGame: number = getNextGame() as number;
         const key = toBase58(nextGame);
-        const tx = head(storage.getBalanceForRegisterBet()) || getTransferWithId(1, data.publicKey);
+        const balances = storage.getBalanceForRegisterBet();
+        const reserved = storage.get('balance').length - balances.length;
+        const tx = head(balances) || getTransferWithId(1, data.publicKey);
+
+        const myBetSum = reserved * 1 * Math.pow(10, 8);
 
         return Promise.all([
             getTxById(tx.id)
@@ -45,7 +49,7 @@ export function registerBet(betType: number, bet: number): Promise<void> {
                             {
                                 key: `${key}_betsSum`,
                                 type: 'integer',
-                                value: tx.amount + betSum - 0.005 * Math.pow(10, 8)
+                                value: tx.amount + betSum - myBetSum - 0.005 * Math.pow(10, 8)
                             }
                         ],
                         fee: {
@@ -58,7 +62,12 @@ export function registerBet(betType: number, bet: number): Promise<void> {
 
                 if (status) {
                     return WavesKeeper.signTransaction(dataTx)
-                        .then(broadcast);
+                        .then(data => {
+                            const promise = broadcast(data);
+                            storage.reserveBalance(tx.id, promise);
+
+                            promise.catch(() => registerBet(betType, bet));
+                        });
                 } else {
                     return WavesKeeper.signTransactionPackage([
                         dataTx,
