@@ -8,7 +8,8 @@ export class Storage extends EventEmitter<Storage.IEvents> {
     private state: Storage.IEvents = {
         balance: [],
         unconfirmed: [],
-        other: []
+        other: [],
+        reservedBalance: Object.create(null)
     };
 
     constructor() {
@@ -18,6 +19,18 @@ export class Storage extends EventEmitter<Storage.IEvents> {
 
     public get<K extends keyof Storage.IEvents>(name: K): Storage.IEvents[K] {
         return this.state[name];
+    }
+
+    public getBalanceForRegisterBet(): Array<api.TTransferTransaction<number>> {
+        return this.state.balance.filter(tx => !(tx.id in this.state.reservedBalance));
+    }
+
+    public reserveBalance(id: string, promise: Promise<any>): void {
+        this.state.reservedBalance[id] = true;
+        const onEnd = () => {
+            delete this.state.reservedBalance[id];
+        };
+        promise.then(onEnd, onEnd);
     }
 
     private _loop() {
@@ -90,6 +103,7 @@ export namespace Storage {
         balance: Array<api.TTransferTransaction<number>>;
         unconfirmed: Array<IBetResult>;
         other: Array<IBetResult>;
+        reservedBalance: Record<string, boolean>;
     }
 
 }

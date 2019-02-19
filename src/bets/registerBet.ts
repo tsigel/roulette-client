@@ -23,7 +23,7 @@ export function registerBet(betType: number, bet: number): Promise<void> {
 
         const nextGame: number = getNextGame() as number;
         const key = toBase58(nextGame);
-        const tx = head(storage.get('balance')) || getTransferWithId(1, data.publicKey);
+        const tx = head(storage.getBalanceForRegisterBet()) || getTransferWithId(1, data.publicKey);
 
         return Promise.all([
             getTxById(tx.id)
@@ -64,9 +64,13 @@ export function registerBet(betType: number, bet: number): Promise<void> {
                         dataTx,
                         getKeeperParamsFromTransfer(tx)
                     ]).then(([data, transfer]) => {
-                        return broadcast(transfer)
+
+                        const promise = broadcast(transfer)
                             .then(waitTransaction)
                             .then(() => broadcast(data));
+
+                        const tx = JSON.parse(transfer);
+                        storage.reserveBalance(tx.id, promise);
                     });
                 }
             });
