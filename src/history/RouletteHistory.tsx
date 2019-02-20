@@ -66,7 +66,7 @@ export class RouletteHistory extends React.Component<RouletteHistory.IProps, Rou
     public render() {
         return (
             <div className={'roulette-history'}>
-                Результаты последних игр:
+                Last results:
                 <div className={'content'}>
                     {this.state.history.map(item => {
                         const cell = CELLS[item.result];
