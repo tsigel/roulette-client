@@ -43,7 +43,7 @@ export function getCurrentFees(id: string): Promise<number> {
 
 export function getUserPayments(): Promise<Array<api.TTransferTransaction<number>>> {
     return getUserAddress()
-        .then(getUserTransactions(50))
+        .then(getUserTransactions(15))
         .then(list => list.filter(isTransfer));
 }
 

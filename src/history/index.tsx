@@ -69,7 +69,7 @@ export class History extends React.Component<History.IProps, History.IState> {
 function getBetText(betType: number, bet: number): string | unknown {
     switch (betType) {
         case 0:
-            return `Число ${bet}`;
+            return `Number ${bet}`;
         case 1:
             return bet ? 'Red' : 'Black';
         case 2:

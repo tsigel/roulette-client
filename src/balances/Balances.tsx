@@ -24,7 +24,7 @@ export class Balances extends React.Component<Balances.IProps, Balances.IState> 
     public render() {
         return (
             <div className={'user-balance'}>
-                Заведённые деньги:
+                My money for bet:
                 <div className={'content'}>
                     {this.state.balance.map(item => {
                         return (
